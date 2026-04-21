@@ -20,8 +20,13 @@ class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название товара")
     description = models.TextField(verbose_name="Описание")
 
-    photo = models.ImageField(upload_to='products/', verbose_name="Фото товара", blank=True, null=True)
-    
+    # Должно быть примерно так:
+    photo = models.ImageField(
+        upload_to='products/',  # ← Важно: папка внутри media!
+        blank=True, 
+        null=True,
+        verbose_name="Фото"
+    )
     price = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 

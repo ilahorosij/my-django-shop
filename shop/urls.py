@@ -1,29 +1,22 @@
-"""
-URL configuration for luboe project.
+from django.urls import path
+from django.contrib.auth import views as auth_views
+from . import views
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
-from django.urls import path, re_path, include
-from .views import *
-from shop import views
-
-
-
+app_name = 'shop'  # ← Это оставляем, это важно!
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('author/', views.author, name='author'),
     path('about/', views.about, name='about'),
+    path('catalog/', views.product_list, name='catalog'),
+    path('catalog/<int:pk>/', views.product_detail, name='product_detail'),
+    path('cart/', views.cart_view, name='cart'),
+    path('cart/add/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/update/<int:item_id>/', views.update_cart, name='update_cart'),
+    path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
+    
+    # Авторизация
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
+# ← Убери отсюда весь код со static(...) если он там есть!

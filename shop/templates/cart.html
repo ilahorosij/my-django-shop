@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Корзина</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; margin-top: 0; }
+        
+        .empty-cart { 
+            text-align: center; 
+            padding: 40px; 
+            color: #7f8c8d;
+        }
+        .empty-cart a { 
+            display: inline-block; 
+            margin-top: 20px; 
+            padding: 12px 30px; 
+            background: #3498db; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 4px;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+        }
+        th, td { 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th { 
+            background: #34495e; 
+            color: white; 
+            font-weight: bold;
+        }
+        tr:hover { background: #f8f9fa; }
+        
+        .product-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            text-align: center;
+        }
+        .product-info img { 
+            width: 60px; 
+            height: 60px; 
+            object-fit: cover; 
+            border-radius: 4px;
+        }
+        .product-name { 
+            font-weight: bold; 
+            color: #2c3e50;
+        }
+        
+        .quantity-form { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        .quantity-form input { 
+            width: 60px; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            text-align: center;
+        }
+        .quantity-form button { 
+            padding: 8px 15px; 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .quantity-form button:hover { background: #2980b9; }
+        
+        .btn-remove { 
+            padding: 8px 15px; 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-remove:hover { background: #c0392b; }
+        
+        .total { 
+            text-align: right; 
+            margin-top: 30px; 
+            padding: 20px; 
+            background: #ecf0f1; 
+            border-radius: 8px;
+        }
+        .total h2 { 
+            margin: 0; 
+            color: #2c3e50;
+            font-size: 28px;
+        }
+        .total-price { 
+            color: #2ecc71; 
+            font-size: 36px; 
+            font-weight: bold;
+        }
+        
+        .back-link { 
+            display: inline-block; 
+            margin-bottom: 20px; 
+            color: #3498db; 
+            text-decoration: none;
+        }
+        .back-link:hover { text-decoration: underline; }
+        
+        .messages { 
+            margin-bottom: 20px; 
+        }
+        .message { 
+            padding: 10px 15px; 
+            border-radius: 4px; 
+            margin-bottom: 10px;
+        }
+        .message.error { background: #fee; color: #c0392b; }
+        .message.success { background: #efe; color: #27ae60; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'shop:catalog' %}" class="back-link">← Продолжить покупки</a>
+        
+        <h1>🛒 Ваша корзина</h1>
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if cart_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Стоимость</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                        <div class="product-info">
+                            <div>
+                                <div class="product-name">{{ item.product.name }}</div>
+                                <small style="color: #7f8c8d;">{{ item.product.category.name }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ item.product.price }} ₽</td>
+                    <td>
+                        <form method="post" action="{% url 'shop:update_cart' item.id %}" class="quantity-form">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}">
+                            <button type="submit">Обновить</button>
+                        </form>
+                        <small style="color: #7f8c8d;">(доступно: {{ item.product.stock }})</small>
+                    </td>
+                    <td><strong>{{ item.item_total_price }} ₽</strong></td>
+                    <td>
+                        <a href="{% url 'shop:remove_from_cart' item.id %}" 
+                           class="btn-remove"
+                           onclick="return confirm('Удалить этот товар из корзины?')">
+                            Удалить
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="total">
+            <h2>Итого: <span class="total-price">{{ total_price }} ₽</span></h2>
+        </div>
+        
+        {% else %}
+        <div class="empty-cart">
+            <h2>😕 Ваша корзина пуста</h2>
+            <p>Добавьте товары из каталога</p>
+            <a href="{% url 'shop:catalog' %}">Перейти к покупкам</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
