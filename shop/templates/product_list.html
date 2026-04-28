@@ -2,6 +2,19 @@
 <html>
 <head>
     <title>Каталог товаров</title>
+    {% if messages %}
+        {% for message in messages %}
+            <div style="
+                padding: 10px;
+                margin-bottom: 10px;
+                border-radius: 5px;
+                background: #d4edda;
+                color: #155724;
+            ">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,6 +106,10 @@
 
         .product-info {
             padding: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .product h3 {
@@ -114,17 +131,21 @@
         }
 
         .btn-add {
-        display: block;
-        width: 80%;
-        margin: 10px auto 0;  /* 🔥 ЦЕНТРИРУЕТ */
-        padding: 12px;
-        background: #27ae60;
-        color: white;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: bold;
-    }
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            width: 100%;
+            padding: 12px;
+
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+
+            text-align: center;
+        }
 
         .btn-add:hover {
             background: #229954;

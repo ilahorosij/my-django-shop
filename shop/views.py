@@ -3,6 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
 from .models import Product, Cart, CartItem, Category, Manufacturer
+from django.shortcuts import render, redirect
+from django.core.mail import EmailMessage
+from openpyxl import Workbook
+from io import BytesIO
 
 
 def home(request):
@@ -123,3 +127,95 @@ def cart_view(request):
         'total_price': total_price,
     }
     return render(request, 'cart.html', context)
+@login_required
+def checkout_success(request):
+    return render(request, "checkout_success.html")
+
+
+
+@login_required
+def checkout(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+
+
+    cart_items = cart.cart_items.select_related('product')
+    if request.method == "GET":
+        return render(request, "checkout.html", {
+            "cart": cart,
+            "items": cart_items
+        })
+
+    if request.method == "POST":
+
+        try:
+            selected_items = request.POST.getlist("items")
+
+            if not selected_items:
+                messages.error(request, "Выберите товары для заказа")
+                return redirect("shop:cart")
+
+            items = CartItem.objects.filter(
+                id__in=selected_items,
+                cart=cart
+            ).select_related('product')
+
+            if not items.exists():
+                messages.error(request, "Товары не найдены")
+                return redirect("shop:cart")
+
+            address = request.POST.get("address")
+
+            if not address:
+                messages.error(request, "Введите адрес доставки")
+                return redirect("shop:cart")
+
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Чек заказа"
+
+            ws.append(["Товар", "Цена", "Кол-во", "Сумма"])
+
+            total = 0
+
+            for item in items:
+                sum_item = item.product.price * item.quantity
+                total += sum_item
+
+                ws.append([
+                    item.product.name,
+                    float(item.product.price),
+                    item.quantity,
+                    float(sum_item)
+                ])
+
+            ws.append([])
+            ws.append(["ИТОГО", "", "", total])
+            ws.append(["Адрес:", address])
+
+            file = BytesIO()
+            wb.save(file)
+            file.seek(0)
+
+            email = EmailMessage(
+                subject="Ваш заказ",
+                body=f"Спасибо за заказ!\nАдрес: {address}",
+                to=[request.user.email or "test@mail.com"],
+            )
+
+            email.attach(
+                "check.xlsx",
+                file.read(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+            email.send(fail_silently=False)
+
+            items.delete()
+
+            messages.success(request, "Заказ успешно оформлен!")
+
+            return redirect("shop:checkout_success")
+
+        except Exception as e:
+            messages.error(request, f"Ошибка оформления заказа: {e}")
+            return redirect("shop:checkout")
