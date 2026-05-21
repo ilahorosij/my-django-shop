@@ -7,8 +7,40 @@ from django.shortcuts import render, redirect
 from django.core.mail import EmailMessage
 from openpyxl import Workbook
 from io import BytesIO
+from rest_framework import viewsets
+from .serializers import (
+    ProductSerializer,
+    CategorySerializer,
+    ManufacturerSerializer,
+    CartSerializer,
+    CartItemSerializer
+)
 
 
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class ManufacturerViewSet(viewsets.ModelViewSet):
+    queryset = Manufacturer.objects.all()
+    serializer_class = ManufacturerSerializer
+
+
+class CartViewSet(viewsets.ModelViewSet):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
+    
 def home(request):
     return render(request, 'index.html')
 

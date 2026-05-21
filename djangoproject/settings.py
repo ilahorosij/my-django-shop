@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'djangoproject',
     'shop',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -132,3 +133,14 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'ilahorosij5822@gmail.com'
 EMAIL_HOST_PASSWORD = 'qmqusxeburlgmmid'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated', 
+    ]
+}
