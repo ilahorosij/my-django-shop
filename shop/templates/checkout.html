@@ -1,102 +1,28 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Оформление заказа</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 30px;
-        }
+{% extends 'base.html' %}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+{% block title %}Оформление заказа{% endblock %}
 
-        h1 {
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
+{% block content %}
+<div class="card p-4 shadow-sm border-0 rounded-4">
+    <h2 class="mb-4">Оформление заказа</h2>
 
-        .form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        button {
-            padding: 10px 20px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #219150;
-        }
-
-        .order-box {
-            margin-top: 20px;
-        }
-
-        .item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .item:last-child {
-            border-bottom: none;
-        }
-
-        .total {
-            margin-top: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: right;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="container">
-
-    <h1>Оформление заказа</h1>
-
-    <form method="post" class="form">
+    <form method="post" class="mb-4">
         {% csrf_token %}
-        <input type="text" name="address" placeholder="Адрес доставки" required>
-        <button type="submit">Подтвердить заказ</button>
+        <div class="mb-3">
+            <label class="form-label">Адрес доставки</label>
+            <input type="text" name="address" class="form-control" placeholder="Введите адрес..." required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Подтвердить заказ</button>
     </form>
 
-    <h2>Ваш заказ:</h2>
-
-    <div class="order-box">
+    <h4 class="mb-3">Ваш заказ:</h4>
+    <div class="list-group list-group-flush">
         {% for item in items %}
-            <div class="item">
-                {{ item.product.name }} —
-                {{ item.quantity }} шт —
-                {{ item.product.price }} ₽
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ item.product.name }}</span>
+                <span>{{ item.quantity }} шт — {{ item.product.price }} ₽</span>
             </div>
         {% endfor %}
     </div>
-
 </div>
-
-</body>
-</html>
+{% endblock %}

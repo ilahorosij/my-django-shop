@@ -20,9 +20,9 @@ class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название товара")
     description = models.TextField(verbose_name="Описание")
 
-    # Должно быть примерно так:
+    
     photo = models.ImageField(
-        upload_to='products/',  # ← Важно: папка внутри media!
+        upload_to='products/',  
         blank=True, 
         null=True,
         verbose_name="Фото"
@@ -39,7 +39,7 @@ class Product(models.Model):
         verbose_name="Количество на складе"
     )
 
-    # Связи (ForeignKey)
+    
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name="Категория")
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="Производитель")
 
@@ -54,7 +54,7 @@ class Cart(models.Model):
 
     @property
     def total_price(self):
-        # Суммируем стоимость всех элементов в этой корзине
+        
         return sum(item.item_total_price() for item in self.cart_items.all())
 
     class Meta:
@@ -73,14 +73,14 @@ class CartItem(models.Model):
         return self.product.price * self.quantity
 
     def clean(self):
-        # Валидация: проверяем наличие на складе
+        
         if self.quantity > self.product.stock:
             raise ValidationError(
                 f"Недостаточно товара на складе. Доступно: {self.product.stock}"
             )
 
     def save(self, *args, **kwargs):
-        self.full_clean() # Запускаем валидацию перед сохранением
+        self.full_clean() 
         super().save(*args, **kwargs)
 
     class Meta:

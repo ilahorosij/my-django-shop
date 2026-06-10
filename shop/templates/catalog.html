@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Каталог товаров{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📦 Каталог товаров</h2>
+
+<div class="row">
+    <aside class="col-md-3 mb-4">
+        <div class="card p-3">
+            <form id="filter-form">
+                <h5>Фильтры</h5>
+                <div class="mb-3">
+                    <label class="form-label">Поиск</label>
+                    <input type="text" id="search-input" class="form-control" placeholder="Название...">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Применить</button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="col-md-9">
+        <div id="loading-spinner" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <div id="product-list" class="row"></div>
+    </main>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+{% endblock %}
+
+{% block scripts %}
+    {% csrf_token %}
+    <script src="{% static 'js/main.js' %}"></script>
+{% endblock %}

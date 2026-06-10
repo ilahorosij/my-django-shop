@@ -5,6 +5,7 @@ from django.contrib import messages
 from .models import Product, Cart, CartItem, Category, Manufacturer
 from django.shortcuts import render, redirect
 from django.core.mail import EmailMessage
+from django.core.paginator import Paginator
 from openpyxl import Workbook
 from io import BytesIO
 from rest_framework import viewsets
@@ -42,7 +43,13 @@ class CartItemViewSet(viewsets.ModelViewSet):
     serializer_class = CartItemSerializer
     
 def home(request):
-    return render(request, 'index.html')
+    
+    products = Product.objects.all().order_by('-id')[:6]
+    categories = Category.objects.all()
+    return render(request, 'index.html', {
+        'products': products,
+        'categories': categories
+    })
 
 def author(request):
     return render(request, 'author.html')
@@ -52,7 +59,7 @@ def about(request):
 
 
 def product_list(request):
-    """Список товаров с фильтрацией и поиском"""
+    """Список товаров с фильтрацией, поиском и пагинацией"""
     products = Product.objects.select_related('category', 'manufacturer').all()
     
     category_id = request.GET.get('category')
@@ -69,8 +76,13 @@ def product_list(request):
             Q(name__icontains=search) | Q(description__icontains=search)
         )
     
+    
+    paginator = Paginator(products, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'products': products,
+        'products': page_obj,
         'categories': Category.objects.all(),
         'manufacturers': Manufacturer.objects.all(),
     }
@@ -81,7 +93,7 @@ def product_detail(request, pk):
     """Детальная страница товара"""
     product = get_object_or_404(Product, pk=pk)
     context = {'product': product}
-    return render(request, 'shop/product_detail.html', context)
+    return render(request, 'product_detail.html', context)
 
 
 
@@ -159,16 +171,14 @@ def cart_view(request):
         'total_price': total_price,
     }
     return render(request, 'cart.html', context)
+
 @login_required
 def checkout_success(request):
     return render(request, "checkout_success.html")
 
-
-
 @login_required
 def checkout(request):
     cart, _ = Cart.objects.get_or_create(user=request.user)
-
 
     cart_items = cart.cart_items.select_related('product')
     if request.method == "GET":

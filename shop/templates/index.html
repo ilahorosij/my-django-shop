@@ -1,22 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Главная</title>
-    <style>
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 5px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Добро пожаловать в магазин!</h1>
-    <a href="/author/" class="btn">Об авторе</a>
-    <a href="/about/" class="btn">О магазине</a>
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-light rounded-3 text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Добро пожаловать в PetStore</h1>
+        <p class="col-md-8 fs-4 mx-auto">Лучшие товары по отличным ценам. Найдите то, что нужно именно вам.</p>
+        <a href="{% url 'shop:catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a>
+    </div>
+</div>
+
+<div class="container my-5">
+    <h2>Категории</h2>
+    <div class="row">
+        {% for cat in categories %}
+        <div class="col-md-3">
+            <a href="{% url 'shop:catalog' %}?category={{ cat.id }}" class="btn btn-outline-secondary w-100 mb-2">
+                {{ cat.name }}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="container my-5">
+    <h2>Популярные товары</h2>
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.price }} ₽</p>
+                    <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-sm btn-primary">Подробнее</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
