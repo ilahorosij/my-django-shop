@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div id="profile-page" class="container mt-4">
+    <div style="display:none;">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    </div>
+
+    <div id="login-required" class="card p-4 text-center" style="display:none;">
+        <h3>Вы не вошли в систему</h3>
+        <p>Пожалуйста, авторизуйтесь для доступа в личный кабинет.</p>
+        <a href="{% url 'shop:login' %}" class="btn btn-primary">Войти</a>
+    </div>
+
+    <div id="content" style="display:none;">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card p-4 h-100">
+                    <h4 class="card-title mb-3">Профиль</h4>
+                    <form id="profile-form">
+                        <input type="text" id="full_name" class="form-control mb-3" placeholder="ФИО" required>
+                        <input type="text" id="phone" class="form-control mb-3" placeholder="Телефон" required>
+                        <input type="email" id="email" class="form-control mb-3" placeholder="Email для чеков" required>
+                        <textarea id="address" class="form-control mb-3" placeholder="Адрес доставки" required></textarea>
+                        
+                        <input type="text" id="city" class="form-control mb-3" placeholder="Город доставки">
+                        
+                        <select id="favorite_category" class="form-control mb-3">
+                            <option value="">-- Выберите любимую категорию --</option>
+                        </select>
+
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card p-4 h-100">
+                    <h4 class="card-title mb-3">Мои заказы</h4>
+                    <table class="table">
+                        <thead><tr><th>ID</th><th>Дата</th><th>Детали</th></tr></thead>
+                        <tbody id="orders-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 1. Универсальная функция запросов
+    async function apiFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        options.headers['Content-Type'] = 'application/json';
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (csrftoken) options.headers['X-CSRFToken'] = csrftoken;
+
+        const response = await fetch(url, options);
+        if (response.status === 401 || response.status === 403) {
+            window.location.href = '{% url "shop:login" %}';
+            throw new Error('Unauthorized');
+        }
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Ошибка сервера');
+        }
+        return response.json();
+    }
+
+    // 2. Загрузка категорий в выпадающий список
+    async function loadCategories() {
+        const response = await fetch('/api/categories/');
+        const categories = await response.json();
+        const select = document.getElementById('favorite_category');
+        select.innerHTML = '<option value="">-- Выберите категорию --</option>';
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            select.appendChild(option);
+        });
+    }
+
+    // 3. Загрузка данных профиля
+    async function loadProfile() {
+        try {
+            await loadCategories(); // Сначала категории
+            const data = await apiFetch('/api/me/'); // Потом данные пользователя
+            
+            document.getElementById('full_name').value = data.full_name || '';
+            document.getElementById('phone').value = data.phone || '';
+            document.getElementById('address').value = data.address || '';
+            document.getElementById('email').value = data.email_for_receipt || '';
+            document.getElementById('city').value = data.city || '';
+            document.getElementById('favorite_category').value = data.favorite_category || '';
+            
+            document.getElementById('content').style.display = 'block';
+            loadOrders();
+        } catch (err) {
+            document.getElementById('login-required').style.display = 'block';
+        }
+    }
+
+    // 4. Отправка формы
+    document.getElementById('profile-form').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await apiFetch('/api/me/', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    full_name: document.getElementById('full_name').value,
+                    phone: document.getElementById('phone').value,
+                    address: document.getElementById('address').value,
+                    email_for_receipt: document.getElementById('email').value,
+                    city: document.getElementById('city').value,
+                    favorite_category: document.getElementById('favorite_category').value
+                })
+            });
+            alert('Данные обновлены!');
+        } catch (err) {
+            alert('Ошибка: ' + err.message);
+        }
+    };
+
+    // 5. Загрузка заказов
+    async function loadOrders() {
+        const orders = await apiFetch('/api/orders/');
+        const tbody = document.getElementById('orders-table');
+        tbody.innerHTML = '';
+        orders.forEach(o => {
+            tbody.innerHTML += `<tr><td>${o.id}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm btn-outline-primary">Подробнее</button></td></tr>`;
+        });
+    }
+
+    loadProfile();
+</script>
+{% endblock %}

@@ -123,8 +123,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-LOGIN_URL = '/admin/login/'          
-LOGIN_REDIRECT_URL = '/cart/'        
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = 'shop:home'
 LOGOUT_REDIRECT_URL = '/'            
 
 
@@ -146,6 +146,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.AllowAny', # Разрешаем доступ всем по умолчанию
     ]
 }

@@ -1,22 +1,28 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}PetStore — Всё для ваших любимцев{% endblock %}
+
 {% block content %}
-<div class="p-5 mb-4 bg-light rounded-3 text-center">
-    <div class="container-fluid py-5">
-        <h1 class="display-5 fw-bold">Добро пожаловать в PetStore</h1>
-        <p class="col-md-8 fs-4 mx-auto">Лучшие товары по отличным ценам. Найдите то, что нужно именно вам.</p>
-        <a href="{% url 'shop:catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a>
+<div class="card p-5 mb-5 text-center shadow-sm border-0 bg-white">
+    <h1 class="display-4 fw-bold mb-3" style="color: var(--accent);">
+        <i class="bi bi-balloon-heart-fill"></i> PetStore — забота о тех, кто вам дорог
+    </h1>
+    <p class="lead text-muted mx-auto" style="max-width: 600px;">
+        Качественные корма, уютные домики и лучшие игрушки для ваших питомцев. Мы знаем, что нужно вашим любимцам!
+    </p>
+    <div class="mt-4">
+        <a href="{% url 'shop:catalog' %}" class="btn btn-primary btn-lg px-5">Перейти к покупкам</a>
     </div>
 </div>
 
 <div class="container my-5">
-    <h2>Категории</h2>
-    <div class="row">
+    <h2 class="mb-4 text-center">Наши категории</h2>
+    <div class="row g-3">
         {% for cat in categories %}
         <div class="col-md-3">
-            <a href="{% url 'shop:catalog' %}?category={{ cat.id }}" class="btn btn-outline-secondary w-100 mb-2">
-                {{ cat.name }}
+            <a href="{% url 'shop:catalog' %}?category={{ cat.id }}" class="card text-decoration-none p-3 text-center border-0 shadow-sm h-100 align-items-center justify-content-center">
+                <span class="fw-bold">{{ cat.name }}</span>
             </a>
         </div>
         {% endfor %}
@@ -24,15 +30,15 @@
 </div>
 
 <div class="container my-5">
-    <h2>Популярные товары</h2>
+    <h2 class="mb-4 text-center">Популярные товары</h2>
     <div class="row">
         {% for product in products %}
         <div class="col-md-4 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 p-3 border-0 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">{{ product.name }}</h5>
-                    <p class="card-text">{{ product.price }} ₽</p>
-                    <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-sm btn-primary">Подробнее</a>
+                    <p class="card-text text-muted fs-5 fw-bold">{{ product.price }} ₽</p>
+                    <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-primary w-100">Подробнее</a>
                 </div>
             </div>
         </div>

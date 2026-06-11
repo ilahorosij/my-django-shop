@@ -40,12 +40,12 @@
                         </td>
                         <td>{{ item.product.price }} ₽</td>
                         <td>
-                            <div class="input-group" style="width: 120px;">
+                            <div class="input-group" style="width: 140px;">
                                 <input type="number" name="quantity" class="form-control" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}">
                                 <button type="submit" formaction="{% url 'shop:update_cart' item.id %}" class="btn btn-outline-primary btn-sm">OK</button>
                             </div>
                         </td>
-                        <td><strong>{{ item.product.price|add:item.quantity }} ₽</strong></td>
+                        <td><strong>{{ item.item_total_price }} ₽</strong></td>
                         <td>
                             <a href="{% url 'shop:remove_from_cart' item.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Удалить товар?')">Удалить</a>
                         </td>
@@ -54,11 +54,7 @@
                 </tbody>
             </table>
 
-            <div class="mb-4">
-                <input type="text" name="address" class="form-control" placeholder="Введите адрес доставки" required>
-            </div>
-
-            <div class="text-end">
+            <div class="text-end mt-4">
                 <button type="submit" class="btn btn-success btn-lg">Оформить заказ</button>
             </div>
         </form>

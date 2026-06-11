@@ -11,13 +11,17 @@ from .views import (
     CartItemViewSet
 )
 
+from .views import MeView
+from .views import OrderViewSet
 app_name = 'shop'  
 router = DefaultRouter()
+
 router.register(r'products', ProductViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register(r'manufacturers', ManufacturerViewSet)
 router.register(r'cart', CartViewSet)
 router.register(r'cart-items', CartItemViewSet)
+router.register(r'orders', OrderViewSet)
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -32,6 +36,15 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('checkout/success/', views.checkout_success, name='checkout_success'),
     path('api/', include(router.urls)),
+    path('register/', views.register_view, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path("api/me/", MeView.as_view()), 
+    path('products/', views.product_list, name='product_list'),
+    path('api/categories/', views.api_categories, name='api-categories'),
+    
+    path('profile/', views.profile_view, name='profile'),
+    path('products/<int:pk>/', views.product_detail, name='product_detail'),
     
     
 ]
