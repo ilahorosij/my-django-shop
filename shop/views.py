@@ -353,22 +353,22 @@ def checkout(request):
     file.seek(0)
 
     # 6. Отправка Email
+    # 6. Отправка Email
     try:
         email = EmailMessage(
             subject=f"Ваш заказ №{request.user.id}",
-            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен.",
+            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.",
             to=[target_email],
         )
         email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         
-        # ДОБАВЬТЕ fail_silently=True
-        email.send(fail_silently=True) 
-        
+        # Используем fail_silently=True, чтобы Django не завершал программу при ошибке
+        email.send(fail_silently=True)
     except Exception as e:
-        # Теперь, если возникнет ошибка, сайт не упадет, а просто запишет ее в консоль
-        print(f"Ошибка отправки почты: {e}")
+        # Если почта не ушла, просто запишем ошибку в лог, но не остановим выполнение
+        print(f"Почта не ушла, но заказ будет создан: {e}")
 
-    # 7. Сохранение в базу (этот код выполнится в любом случае!)
+    # 7. Сохранение в базу (ТЕПЕРЬ ЭТО ВНЕ БЛОКА try/except ДЛЯ ПОЧТЫ)
     new_order = Order.objects.create(
         user=request.user,
         address=user_profile.address,
