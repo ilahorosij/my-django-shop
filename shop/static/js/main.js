@@ -26,20 +26,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         </div>`;
+products.forEach(product => {
+    // 1. Проверяем, есть ли картинка. 
+    // Если product.image существует, используем его, иначе — берем дефолтную картинку
+    const imageUrl = product.image ? product.image : '/static/images/default.png';
 
-            products.forEach(product => {
     productList.innerHTML += `
         <div class="col-md-4 mb-4">
             <div class="card h-100">
+                <img src="${imageUrl}" class="card-img-top" alt="${product.name}" style="height: 200px; object-fit: cover;">
+                
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title">${product.name}</h5>
                     <p class="card-text text-muted">${product.price} ₽</p>
                     
                     <div class="mt-auto">
-                        <a href="/catalog/${product.id}/" class="btn btn-outline-primary w-100 mb-2">
-                            Подробнее
-                        </a>
-                        
+                        <a href="/catalog/${product.id}/" class="btn btn-outline-primary w-100 mb-2">Подробнее</a>
                         <button class="btn btn-success w-100 add-to-cart" data-id="${product.id}">
                             В корзину
                         </button>
