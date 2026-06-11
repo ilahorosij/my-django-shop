@@ -356,16 +356,19 @@ def checkout(request):
     try:
         email = EmailMessage(
             subject=f"Ваш заказ №{request.user.id}",
-            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.\nЧек во вложении.",
+            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен.",
             to=[target_email],
         )
         email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        email.send()
+        
+        # ДОБАВЬТЕ fail_silently=True
+        email.send(fail_silently=True) 
+        
     except Exception as e:
-        messages.error(request, "Ошибка при отправке письма. Попробуйте позже.")
-        return redirect("shop:cart")
+        # Теперь, если возникнет ошибка, сайт не упадет, а просто запишет ее в консоль
+        print(f"Ошибка отправки почты: {e}")
 
-    # 7. Сохранение в базу
+    # 7. Сохранение в базу (этот код выполнится в любом случае!)
     new_order = Order.objects.create(
         user=request.user,
         address=user_profile.address,
