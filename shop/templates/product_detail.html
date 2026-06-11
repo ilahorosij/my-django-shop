@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -16,7 +19,7 @@
                 {% if product.photo %}
                     <img src="{{ product.photo.url }}" class="card-img-top" alt="{{ product.name }}">
                 {% else %}
-                    <img src="https://via.placeholder.com/500" class="card-img-top" alt="Нет фото">
+                    <img src="{% static 'images/default.png' %}" class="card-img-top" alt="Нет фото">
                 {% endif %}
             </div>
         </div>

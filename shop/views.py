@@ -195,7 +195,7 @@ def logout_view(request):
 # =========================
 
 def product_list(request):
-    products = Product.objects.select_related('category', 'manufacturer').all()
+    products = Product.objects.select_related('category', 'manufacturer').all().order_by('-id')
 
     category_id = request.GET.get('category')
     if category_id:
@@ -353,6 +353,8 @@ def checkout(request):
     file.seek(0)
 
     # 6. Отправка Email
+    # 6. Отправка Email
+   # 6. Отправка Email
     try:
         email = EmailMessage(
             subject=f"Ваш заказ №{request.user.id}",
@@ -360,12 +362,12 @@ def checkout(request):
             to=[target_email],
         )
         email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        email.send()
+        # email.send()  # Отправка временно отключена
     except Exception as e:
-        messages.error(request, "Ошибка при отправке письма. Попробуйте позже.")
-        return redirect("shop:cart")
+        # Если вы хотите логировать ошибку, добавьте print(e)
+        pass # "pass" говорит Python: "ничего не делай, если возникла ошибка"
 
-    # 7. Сохранение в базу
+    # 7. Сохранение в базу (этот код должен быть НЕ в блоке except!)
     new_order = Order.objects.create(
         user=request.user,
         address=user_profile.address,
@@ -381,7 +383,7 @@ def checkout(request):
 
     # 8. Финал
     items.delete()
-    messages.success(request, f"Заказ успешно оформлен! Чек отправлен на {target_email}")
+    messages.success(request, f"Заказ успешно оформлен!")
     return redirect("shop:checkout_success")
 def checkout_success(request):
     return render(request, "checkout_success.html")
