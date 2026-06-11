@@ -354,26 +354,34 @@ def checkout(request):
 
     # 6. Отправка Email
     # 6. Отправка Email
-    try:
-        email = EmailMessage(
-            subject=f"Ваш заказ №{request.user.id}",
-            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.",
-            to=[target_email],
-        )
-        email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        
-        # Используем fail_silently=True, чтобы Django не завершал программу при ошибке
-        email.send(fail_silently=True)
-    except Exception as e:
-        # Если почта не ушла, просто запишем ошибку в лог, но не остановим выполнение
-        print(f"Почта не ушла, но заказ будет создан: {e}")
+    import threading  # Обязательно добавьте этот импорт в самый верх файла!
 
-    # 7. Сохранение в базу (ТЕПЕРЬ ЭТО ВНЕ БЛОКА try/except ДЛЯ ПОЧТЫ)
+# --- Внутри вашей функции checkout ---
+
+    # 6. Отправка Email (в фоновом режиме)
+    def send_async_email(email_message):
+        try:
+            email_message.send()
+        except Exception as e:
+            print(f"Фоновая отправка почты не удалась: {e}")
+
+    email = EmailMessage(
+        subject=f"Ваш заказ №{request.user.id}",
+        body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.",
+        to=[target_email],
+    )
+    email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+    # Запускаем отправку в отдельном потоке, чтобы сайт не ждал ответа от Gmail
+    threading.Thread(target=send_async_email, args=(email,)).start()
+
+    # 7. Сохранение в базу данных (выполнится мгновенно)
     new_order = Order.objects.create(
         user=request.user,
         address=user_profile.address,
         is_paid=False
     )
+    
     for item in items:
         OrderItem.objects.create(
             order=new_order,
@@ -382,9 +390,8 @@ def checkout(request):
             price=item.product.price
         )
 
-    # 8. Финал
+    # 8. Очистка корзины и редирект
     items.delete()
-    messages.success(request, f"Заказ успешно оформлен! Чек отправлен на {target_email}")
     return redirect("shop:checkout_success")
 def checkout_success(request):
     return render(request, "checkout_success.html")
