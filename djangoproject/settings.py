@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 ALLOWED_HOSTS.append('.up.railway.app')
-
+CSRF_TRUSTED_ORIGINS = ['https://web-production-02250.up.railway.app']
 
 # Application definition
 
