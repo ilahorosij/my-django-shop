@@ -350,19 +350,29 @@ def checkout(request):
     # 5. Отправка через Resend API (не блокирует поток!)
     try:
         resend.api_key = settings.RESEND_API_KEY
-        resend.Emails.send({
-            "from": "onboarding@resend.dev", # Укажите ваш подтвержденный email
+
+        response = resend.Emails.send({
+            "from": "onboarding@resend.dev",
             "to": [target_email],
             "subject": f"Ваш заказ №{new_order.id}",
-            "html": f"<p>Здравствуйте, {user_profile.full_name}! Ваш заказ №{new_order.id} оформлен.</p>",
-            "attachments": [{"filename": "order.xlsx", "content": list(file_data)}]
+            "html": f"""
+                <h2>Спасибо за заказ!</h2>
+                <p>Здравствуйте, {user_profile.full_name}.</p>
+                <p>Ваш заказ №{new_order.id} успешно оформлен.</p>
+            """
         })
-    except Exception as e:
-        print(f"Ошибка API: {e}")
 
-    # 6. Финал
-    items.delete()
-    return redirect("shop:checkout_success")
+        print("Письмо отправлено:")
+        print(response)
+
+    except Exception as e:
+        import traceback
+
+        print("=" * 50)
+        print("ОШИБКА RESEND")
+        print(str(e))
+        traceback.print_exc()
+        print("=" * 50)
 @login_required
 def remove_from_cart(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
