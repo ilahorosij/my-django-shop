@@ -344,38 +344,30 @@ def checkout(request):
     
     file = BytesIO()
     wb.save(file)
-    file_data = file.getvalue() # Получаем байты для API
+    file_bytes = file.getvalue() # Получаем байты
     file.close()
 
-    # 5. Отправка через Resend API (не блокирует поток!)
+    # 5. Отправка через Resend API
     try:
         resend.api_key = settings.RESEND_API_KEY
-
-        response = resend.Emails.send({
+        params = {
             "from": "onboarding@resend.dev",
             "to": [target_email],
             "subject": f"Ваш заказ №{new_order.id}",
-            "html": f"""
-                <h2>Спасибо за заказ!</h2>
-                <p>Здравствуйте, {user_profile.full_name}.</p>
-                <p>Ваш заказ №{new_order.id} успешно оформлен.</p>
-            """
-        })
-
-        print("Письмо отправлено:")
-        print(response)
-
+            "html": f"<h2>Спасибо за заказ!</h2><p>Ваш заказ №{new_order.id} оформлен.</p>",
+            "attachments": [
+                {
+                    "filename": "order.xlsx",
+                    "content": list(file_bytes) # Преобразуем в список для API
+                }
+            ]
+        }
+        resend.Emails.send(params)
+        messages.success(request, "Заказ оформлен, информация отправлена на почту.")
     except Exception as e:
-        import traceback
-
-        print("=" * 50)
-        print("ОШИБКА RESEND")
-        print(str(e))
-        traceback.print_exc()
-        print("=" * 50)
-@login_required
-def remove_from_cart(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    item.delete()
-    messages.success(request, "Удалено")
-    return redirect('shop:cart')
+        print(f"Ошибка при отправке через Resend: {e}")
+        messages.error(request, "Заказ оформлен, но возникла ошибка при отправке email.")
+    
+    # Очистка корзины после успешного оформления
+    items.delete()
+    return redirect("shop:home") # Или на страницу успеха
