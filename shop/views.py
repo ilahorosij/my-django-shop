@@ -288,18 +288,6 @@ def update_cart(request, item_id):
 
 
 @login_required
-def remove_from_cart(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-    item.delete()
-    messages.success(request, "Удалено")
-    return redirect('shop:cart')
-
-
-# =========================
-# CHECKOUT
-# =========================
-
-@login_required
 def checkout(request):
     # 1. Получение профиля
     try:
@@ -308,13 +296,12 @@ def checkout(request):
         messages.error(request, "Профиль пользователя не найден.")
         return redirect("shop:home")
 
-    # 2. Определение целевого Email (сначала ищем в профиле, затем в аккаунте)
-    # Если вы добавили поле email_for_receipt в модель Profile, используйте его:
-    target_email = getattr(user_profile, 'email_for_receipt', request.user.email)
+    # 2. Определение целевого Email
+    target_email = getattr(user_profile, 'email_for_receipt', None) or request.user.email
 
     # 3. Валидация данных
-    if not user_profile.full_name or not user_profile.phone or not user_profile.address or not target_email:
-        messages.error(request, "Для оформления заказа необходимо заполнить ФИО, телефон, адрес и Email в профиле.")
+    if not all([user_profile.full_name, user_profile.phone, user_profile.address, target_email]):
+        messages.error(request, "Для оформления заказа заполните ФИО, телефон, адрес и Email в профиле.")
         return redirect("shop:profile")
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -335,7 +322,22 @@ def checkout(request):
 
     items = CartItem.objects.filter(id__in=selected_ids, cart=cart).select_related('product')
 
-    # Генерация Excel
+    # 6. Сохранение заказа В БАЗУ ДАННЫХ (сначала создаем объект)
+    new_order = Order.objects.create(
+        user=request.user,
+        address=user_profile.address,
+        is_paid=False
+    )
+    
+    for item in items:
+        OrderItem.objects.create(
+            order=new_order,
+            product=item.product,
+            quantity=item.quantity,
+            price=item.product.price
+        )
+
+    # 7. Генерация Excel
     wb = Workbook()
     ws = wb.active
     ws.title = "Заказ"
@@ -352,49 +354,21 @@ def checkout(request):
     wb.save(file)
     file.seek(0)
 
-    # 6. Отправка Email
-    # 6. Отправка Email
-    import threading  # Обязательно добавьте этот импорт в самый верх файла!
-
-# --- Внутри вашей функции checkout ---
-
-    # 6. Отправка Email (в фоновом режиме)
-    def send_async_email(email_message):
-        try:
-            email_message.send()
-        except Exception as e:
-            print(f"Фоновая отправка почты не удалась: {e}")
-
-    # 6. Отправка Email
+    # 8. Отправка Email (используем уже созданный new_order)
     email = EmailMessage(
-        subject=f"Ваш заказ №{new_order.id}", # Исправил на ID заказа
-        body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.",
+        subject=f"Ваш заказ №{new_order.id}",
+        body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ №{new_order.id} оформлен. Спасибо за покупку!",
         to=[target_email],
     )
     email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     
-    # Отправляем синхронно, чтобы увидеть ошибку сразу в браузере, а не в логах
-    email.send()
+    # Отправляем синхронно (для надежности на Railway)
+    try:
+        email.send()
+    except Exception as e:
+        print(f"Ошибка при отправке почты: {e}")
 
-    # Запускаем отправку в отдельном потоке, чтобы сайт не ждал ответа от Gmail
-    threading.Thread(target=send_async_email, args=(email,)).start()
-
-    # 7. Сохранение в базу данных (выполнится мгновенно)
-    new_order = Order.objects.create(
-        user=request.user,
-        address=user_profile.address,
-        is_paid=False
-    )
-    
-    for item in items:
-        OrderItem.objects.create(
-            order=new_order,
-            product=item.product,
-            quantity=item.quantity,
-            price=item.product.price
-        )
-
-    # 8. Очистка корзины и редирект
+    # 9. Очистка корзины и редирект
     items.delete()
     return redirect("shop:checkout_success")
 def checkout_success(request):
