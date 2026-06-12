@@ -365,12 +365,16 @@ def checkout(request):
         except Exception as e:
             print(f"Фоновая отправка почты не удалась: {e}")
 
+    # 6. Отправка Email
     email = EmailMessage(
-        subject=f"Ваш заказ №{request.user.id}",
+        subject=f"Ваш заказ №{new_order.id}", # Исправил на ID заказа
         body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ оформлен по адресу: {user_profile.address}.",
         to=[target_email],
     )
     email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    
+    # Отправляем синхронно, чтобы увидеть ошибку сразу в браузере, а не в логах
+    email.send()
 
     # Запускаем отправку в отдельном потоке, чтобы сайт не ждал ответа от Gmail
     threading.Thread(target=send_async_email, args=(email,)).start()
