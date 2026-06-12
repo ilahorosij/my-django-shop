@@ -323,6 +323,7 @@ def checkout(request):
     items = CartItem.objects.filter(id__in=selected_ids, cart=cart).select_related('product')
 
     # 6. Сохранение заказа В БАЗУ ДАННЫХ (сначала создаем объект)
+    # 6. Сохранение заказа В БАЗУ ДАННЫХ
     new_order = Order.objects.create(
         user=request.user,
         address=user_profile.address,
@@ -337,7 +338,7 @@ def checkout(request):
             price=item.product.price
         )
 
-    # 7. Генерация Excel
+    # 7. Генерация Excel (оставляем как есть)
     wb = Workbook()
     ws = wb.active
     ws.title = "Заказ"
@@ -354,21 +355,23 @@ def checkout(request):
     wb.save(file)
     file.seek(0)
 
-    # 8. Отправка Email (используем уже созданный new_order)
-    email = EmailMessage(
-        subject=f"Ваш заказ №{new_order.id}",
-        body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ №{new_order.id} оформлен. Спасибо за покупку!",
-        to=[target_email],
-    )
-    email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    
-    # Отправляем синхронно (для надежности на Railway)
+    # 8. Отправка Email с жестким таймаутом
     try:
-        email.send()
+        email = EmailMessage(
+            subject=f"Ваш заказ №{new_order.id}",
+            body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ №{new_order.id} оформлен. Спасибо за покупку!",
+            to=[target_email],
+        )
+        email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+        # ВАЖНО: Отправляем с явным таймаутом, чтобы сервер не зависал
+        email.connection.timeout = 5 
+        email.send(fail_silently=False)
+        
     except Exception as e:
-        print(f"Ошибка при отправке почты: {e}")
+        print(f"Ошибка при отправке почты (это не должно ломать заказ): {e}")
 
-    # 9. Очистка корзины и редирект
+    # 9. Очистка корзины и редирект (выполняется в любом случае)
     items.delete()
     return redirect("shop:checkout_success")
 def checkout_success(request):
