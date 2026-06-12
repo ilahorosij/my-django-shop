@@ -352,7 +352,7 @@ def checkout(request):
         resend.api_key = settings.RESEND_API_KEY
         params = {
             "from": "onboarding@resend.dev",
-            "to": [target_email],
+            "to": "ilahorosij5822@gmail.com",
             "subject": f"Ваш заказ №{new_order.id}",
             "html": f"<h2>Спасибо за заказ!</h2><p>Ваш заказ №{new_order.id} оформлен.</p>",
             "attachments": [
