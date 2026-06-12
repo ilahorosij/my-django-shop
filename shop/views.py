@@ -371,3 +371,10 @@ def checkout(request):
     # Очистка корзины после успешного оформления
     items.delete()
     return redirect("shop:home") # Или на страницу успеха
+from django.shortcuts import redirect, get_object_or_404
+from .models import CartItem # Импортируйте вашу модель корзины
+
+def remove_from_cart(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id)
+    item.delete()
+    return redirect('shop:cart') # Перенаправляем обратно в корзину
