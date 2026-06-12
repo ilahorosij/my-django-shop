@@ -373,3 +373,9 @@ def checkout(request):
     return redirect("shop:checkout_success")
 def checkout_success(request):
     return render(request, "checkout_success.html")
+@login_required
+def remove_from_cart(request, item_id):
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    item.delete()
+    messages.success(request, "Удалено")
+    return redirect('shop:cart')
