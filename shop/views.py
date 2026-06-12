@@ -378,3 +378,9 @@ def remove_from_cart(request, item_id):
     item = get_object_or_404(CartItem, id=item_id)
     item.delete()
     return redirect('shop:cart') # Перенаправляем обратно в корзину
+from django.shortcuts import render
+
+def checkout_success(request):
+    return render(request, 'checkout_success.html') 
+    # Убедитесь, что у вас есть файл шаблона checkout_success.html 
+    # в папке templates/shop/
