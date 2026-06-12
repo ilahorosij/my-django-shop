@@ -287,6 +287,14 @@ def update_cart(request, item_id):
     return redirect('shop:cart')
 
 
+import resend
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.conf import settings
+from io import BytesIO
+from openpyxl import Workbook
+from .models import Cart, CartItem, Order, OrderItem
+
 @login_required
 def checkout(request):
     # 1. Получение профиля
@@ -296,51 +304,37 @@ def checkout(request):
         messages.error(request, "Профиль пользователя не найден.")
         return redirect("shop:home")
 
-    # 2. Определение целевого Email
     target_email = getattr(user_profile, 'email_for_receipt', None) or request.user.email
-
-    # 3. Валидация данных
+    
+    # 2. Валидация
     if not all([user_profile.full_name, user_profile.phone, user_profile.address, target_email]):
-        messages.error(request, "Для оформления заказа заполните ФИО, телефон, адрес и Email в профиле.")
+        messages.error(request, "Заполните профиль.")
         return redirect("shop:profile")
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    
-    # 4. GET запрос
+
     if request.method == "GET":
         items = cart.cart_items.select_related('product').all()
         if not items.exists():
-            messages.error(request, "Ваша корзина пуста.")
             return redirect("shop:cart")
         return render(request, "checkout.html", {"cart": cart, "items": items})
 
-    # 5. POST запрос (Оформление)
+    # 3. POST запрос (Оформление)
     selected_ids = request.POST.getlist("items")
-    if not selected_ids:
-        messages.error(request, "Выберите товары для оформления заказа.")
+    items = CartItem.objects.filter(id__in=selected_ids, cart=cart).select_related('product')
+    
+    if not items.exists():
+        messages.error(request, "Выберите товары.")
         return redirect("shop:cart")
 
-    items = CartItem.objects.filter(id__in=selected_ids, cart=cart).select_related('product')
-
-    # 6. Сохранение заказа В БАЗУ ДАННЫХ (сначала создаем объект)
-    new_order = Order.objects.create(
-        user=request.user,
-        address=user_profile.address,
-        is_paid=False
-    )
-    
+    # Создание заказа
+    new_order = Order.objects.create(user=request.user, address=user_profile.address, is_paid=False)
     for item in items:
-        OrderItem.objects.create(
-            order=new_order,
-            product=item.product,
-            quantity=item.quantity,
-            price=item.product.price
-        )
+        OrderItem.objects.create(order=new_order, product=item.product, quantity=item.quantity, price=item.product.price)
 
-    # 7. Генерация Excel
+    # 4. Генерация Excel
     wb = Workbook()
     ws = wb.active
-    ws.title = "Заказ"
     ws.append(["Товар", "Цена", "Кол-во", "Сумма"])
     total = 0
     for item in items:
@@ -348,31 +342,28 @@ def checkout(request):
         total += sum_item
         ws.append([item.product.name, float(item.product.price), item.quantity, float(sum_item)])
     ws.append(["ИТОГО", "", "", total])
-    ws.append(["Адрес доставки", user_profile.address])
     
     file = BytesIO()
     wb.save(file)
-    file.seek(0)
+    file_data = file.getvalue() # Получаем байты для API
+    file.close()
 
-    # 8. Отправка Email (используем уже созданный new_order)
-    email = EmailMessage(
-        subject=f"Ваш заказ №{new_order.id}",
-        body=f"Здравствуйте, {user_profile.full_name}!\nВаш заказ №{new_order.id} оформлен. Спасибо за покупку!",
-        to=[target_email],
-    )
-    email.attach("order.xlsx", file.read(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    
-    # Отправляем синхронно (для надежности на Railway)
+    # 5. Отправка через Resend API (не блокирует поток!)
     try:
-        email.send()
+        resend.api_key = settings.RESEND_API_KEY
+        resend.Emails.send({
+            "from": "onboarding@resend.dev", # Укажите ваш подтвержденный email
+            "to": [target_email],
+            "subject": f"Ваш заказ №{new_order.id}",
+            "html": f"<p>Здравствуйте, {user_profile.full_name}! Ваш заказ №{new_order.id} оформлен.</p>",
+            "attachments": [{"filename": "order.xlsx", "content": list(file_data)}]
+        })
     except Exception as e:
-        print(f"Ошибка при отправке почты: {e}")
+        print(f"Ошибка API: {e}")
 
-    # 9. Очистка корзины и редирект
+    # 6. Финал
     items.delete()
     return redirect("shop:checkout_success")
-def checkout_success(request):
-    return render(request, "checkout_success.html")
 @login_required
 def remove_from_cart(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
